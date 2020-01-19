@@ -21,40 +21,31 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// addCmd represents the add command
-var addCmd = &cobra.Command{
-	Use:   "add",
-	Short: "Add an SSH connection",
-	Long: `Add the connection information for a target host, such as:
- • Hostname AND/OR Host IP Address
- • Auth type (key or credentials)
- • Auth payload (key/key path/username & password)
- • Metadata (host OS type, group label, server/device type [router, database, webserver])	
+// importCmd represents the import command
+var importCmd = &cobra.Command{
+	Use:   "import",
+	Short: "A brief description of your command",
+	Long: `A longer description that spans multiple lines and likely contains examples
+and usage of using your command. For example:
 
-two modes: interactive with prompts or non-interactive using flags
-
-examples: 
-
-[interactive]
-$ go22 add 
-
-[non-interactive]
-$ go add --hn=localhost --ip=127.0.0.1 --at=key --ap=$HOME/.ssh/id_rsa.pub`,
+Cobra is a CLI library for Go that empowers applications.
+This application is a tool to generate the needed files
+to quickly create a Cobra application.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("add called")
+		fmt.Println("import called")
 	},
 }
 
 func init() {
-	rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(importCmd)
 
 	// Here you will define your flags and configuration settings.
 
 	// Cobra supports Persistent Flags which will work for this command
 	// and all subcommands, e.g.:
-	// addCmd.PersistentFlags().String("foo", "", "A help for foo")
+	// importCmd.PersistentFlags().String("foo", "", "A help for foo")
 
 	// Cobra supports local flags which will only run when this command
 	// is called directly, e.g.:
-	// addCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	// importCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
 }
