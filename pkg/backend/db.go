@@ -1,15 +1,12 @@
 package backend
 
 import (
+	"errors"
 	"database/sql"
 	_ "github.com/mattn/go-sqlite3"
-	// "fmt"
+	"strings"
 )
 
-// Adder interface for any object that can save a connection
-type Adder interface {
-	AddConn(Connection) error
-}
 
 // DB database representation
 type DB struct {
@@ -20,7 +17,7 @@ const (
 	
 	connTable  string = `
 CREATE TABLE IF NOT EXISTS
-connections (id INTEGER PRIMARY KEY, conn_name TEXT NOT NULL, hostname TEXT, 
+connections (id INTEGER PRIMARY KEY, conn_name TEXT UNIQUE NOT NULL, hostname TEXT, 
 	ipaddress TEXT, authtype TEXT NOT NULL, username TEXT, password TEXT, privkey TEXT, pubkey TEXT)`
 
 	connInsert string = `
@@ -29,28 +26,45 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
 
 )
 
-//NewDB initialize SSH connection database
+// NewDB initialize SSH connection database.
 func NewDB(dataSourceName string) (*DB, error) {
 	db, err := sql.Open("sqlite3", dataSourceName)
+	err = db.Ping()
+	if err != nil {
+		return nil, errors.New(`Unable to open database: destination directory "data" does not exist
+Please check your "$HOME/.go22/" directory or run "go22 init" to reinitalize the application.`)
+	}
+
+	_, err = db.Exec(connTable)
 	if err != nil {
 		return nil, err
 	}
-	db.Exec(connTable)
+
 	return &DB{db}, nil 
 }
 
-//AddConn add SSH connection
+// AddConn add SSH connection.
 func (db *DB) AddConn(conn Connection) error {
+	
+	// Preparing SQL Insert statement to save connections.
 	stmt, err := db.Prepare(connInsert)
 	if err != nil {
 		return err
 	}
+
 	defer db.Close()
-	stmt.Exec(conn.ConnName, conn.HostName, conn.IPAddress, conn.AuthType, conn.PrivKey, conn.PubKey, conn.Username, conn.Password)
-	// defer stmt.Close()
+
+	// Executing above SQL Insert with connection attributes passed in.
+	_, err = stmt.Exec(conn.ConnName, conn.HostName, conn.IPAddress, conn.AuthType, conn.Username, conn.Password, conn.PrivKey, conn.PubKey)
 	if err != nil {
-		return err
+		insertError := strings.Contains(err.Error(), "UNIQUE constraint failed")
+		err = errors.New("connection \"" + conn.ConnName +  "\" already exists")
+		if insertError {
+			return err
+		}
 	}
+	
 	return nil
 }
+
 

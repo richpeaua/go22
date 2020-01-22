@@ -1,4 +1,4 @@
-package main
+package ssh
 
 import (
 	"crypto/rand"
@@ -6,33 +6,31 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"golang.org/x/crypto/ssh"
-	"io/ioutil"
-	"fmt"
+	// "io/ioutil"
+	// "fmt"
 	"strings"
 )
 
-
-// GenSSHKeyPair
-func main() {
+// GenSSHKeyPair generates and returns SSH private/public key-pair as strings and an error
+func GenSSHKeyPair() (string, string, error) {
 	// savePrivateFileTo := "./id_rsa_test"
 	// savePublicFileTo := "./id_rsa_test.pub"
 	bitSize := 2048
 
 	initKey, err := genPrivKey(bitSize)
 	if err != nil {
-		panic(err.Error())
+		return "", "", err
 	}
 
 	publicKey, err := genPubKey(&initKey.PublicKey)
 	if err != nil {
-		panic(err.Error())
+		return "", "", err
 	}
 
 	privateKey := encPrivKeyToPEM(initKey)
 
-	fmt.Println(strings.TrimSpace(privateKey))
-	fmt.Println()
-	fmt.Println(strings.TrimSpace(publicKey))
+	return strings.TrimSpace(privateKey), strings.TrimSpace(publicKey), nil
+
 	// err = writeKeyToFile(privateKeyBytes, savePrivateFileTo)
 	// if err != nil {
 	// 	panic(err.Error())
@@ -58,7 +56,6 @@ func genPrivKey(bitSize int) (*rsa.PrivateKey, error) {
 		return nil, err
 	}
 
-	fmt.Println("Private Key generated")
 	return privateKey, nil
 }
 
@@ -90,17 +87,16 @@ func genPubKey(privatekey *rsa.PublicKey) (string, error) {
 
 	pubKeyBytes := string(ssh.MarshalAuthorizedKey(publicRsaKey))
 
-	fmt.Println("Public key generated")
 	return pubKeyBytes, nil
 }
 
 // writePemToFile writes keys to a file
-func writeKeyToFile(keyBytes []byte, saveFileTo string) error {
-	err := ioutil.WriteFile(saveFileTo, keyBytes, 0600)
-	if err != nil {
-		return err
-	}
+// func writeKeyToFile(keyBytes []byte, saveFileTo string) error {
+// 	err := ioutil.WriteFile(saveFileTo, keyBytes, 0600)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	fmt.Printf("Key saved to: %s \n", saveFileTo)
-	return nil
-}
+// 	fmt.Printf("Key saved to: %s \n", saveFileTo)
+// 	return nil
+// }

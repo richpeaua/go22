@@ -16,9 +16,10 @@ limitations under the License.
 package cmd
 
 import (
-	"fmt"
 
 	"github.com/richpeaua/go22/pkg/backend"
+	"github.com/richpeaua/go22/pkg/log"
+	"github.com/richpeaua/go22/pkg/ssh"
 	"github.com/spf13/cobra"
 
 )
@@ -28,34 +29,36 @@ import (
 var addCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Add an SSH connection",
-	Long: `Add the connection information for a target host, such as:
- • Hostname AND/OR Host IP Address
- • Auth type (key or credentials)
- • Auth payload (key/key path/username & password)
- • Metadata (host OS type, group label, server/device type [router, database, webserver])	
-two modes: interactive with prompts or non-interactive using flags
+	Long: `Save a connection for a target host by defining the following items:
+ • Target hostname AND/OR 
+ • Target IP address
+ • Auth type (key or password)
+ • Username
+ • Password
+ 	
+Two modes: interactive with prompts or non-interactive using flags
 
-examples: 
+Examples: 
 
 [interactive]
 $ go22 add 
 
 [non-interactive]
-$ go add -c mycomp -n localhost -i 127.0.0.1 -a key -d $HOME/.ssh/id_rsa.pub`,
+$ go22 add -c mycomp -n localhost -i 127.0.0.1 -a key -u admin -d $HOME/.ssh/id_rsa.pub`,
 	Run: func(cmd *cobra.Command, args []string) {
-
 		db, err := backend.NewDB(DataFile)
 		if err != nil {
-			panic(err)
+			log.Error(err.Error())
+			return
 		}
+		
 		connName, _  := cmd.Flags().GetString("conn-name") 
 		hostName, _  := cmd.Flags().GetString("host-name")
 		ipAddress, _ := cmd.Flags().GetString("ip-address")
 		authType, _  := cmd.Flags().GetString("auth-type")
 		userName, _  := cmd.Flags().GetString("username")
 		password, _  := cmd.Flags().GetString("password")
-		privkey, _ 	 := cmd.Flags().GetString("key")
-		pubkey  	 := "bca"
+		privKey, pubKey, _ := ssh.GenSSHKeyPair()
 
 
 		connection := backend.Connection{
@@ -65,25 +68,27 @@ $ go add -c mycomp -n localhost -i 127.0.0.1 -a key -d $HOME/.ssh/id_rsa.pub`,
 			AuthType: authType,
 			Username: userName,
 			Password: password,
-			PrivKey: privkey,
-			PubKey: pubkey,
+			PrivKey: privKey,
+			PubKey: pubKey,
 		}
-		fmt.Println(connection, db)
-		// err = db.AddConn(connection)
-		// if err != nil {
-		// 	panic(err)
-		// }
+		// fmt.Println(connection, db)
+		err = db.AddConn(connection)
+		if err != nil {
+			log.Error(err.Error())
+			return
+		}
+		log.Info("Connection \"%s\" successfully created", connName)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(addCmd)
 	addCmd.Flags().StringP("conn-name", "c", "", "connection name \t\t*required" )
-	addCmd.Flags().StringP("host-name", "n", "", "hostname of target machine \t*optional if ip address is set" )
-	addCmd.Flags().StringP("ip-address", "i", "", "ip of target machine \t*optional if hostname is set" )
+	addCmd.Flags().StringP("host-name", "n", "", "hostname of target machine \t^optional if ip address is set" )
+	addCmd.Flags().StringP("ip-address", "i", "", "ip of target machine \t^optional if hostname is set" )
 	addCmd.Flags().StringP("auth-type", "a", "password", "ssh authentication type \t[credentials | key] *required" )
-	addCmd.Flags().StringP("username", "u", "", "connection username \t\t*required")
-	addCmd.Flags().StringP("password", "p", "", "connection password \t\t*required if --auth-type=password")
-	addCmd.Flags().StringP("key", "k", "", "connection key path \t\t *optional")
+	addCmd.Flags().StringP("username", "u", "", "connection username \t*required")
+	addCmd.Flags().StringP("password", "p", "", "connection password \t*required if --auth-type=password")
+	addCmd.Flags().StringP("key", "k", "", "connection key path \t^optional")
 }
 
