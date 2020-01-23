@@ -46,12 +46,14 @@ $ go22 add
 [non-interactive]
 $ go22 add -c mycomp -n localhost -i 127.0.0.1 -a key -u admin -d $HOME/.ssh/id_rsa.pub`,
 	Run: func(cmd *cobra.Command, args []string) {
+		//New database connection
 		db, err := backend.NewDB(DataFile)
 		if err != nil {
 			log.Error(err.Error())
 			return
 		}
 		
+		//Grab connection attribute values from CLI flag input
 		connName, _  := cmd.Flags().GetString("conn-name") 
 		hostName, _  := cmd.Flags().GetString("host-name")
 		ipAddress, _ := cmd.Flags().GetString("ip-address")
@@ -61,7 +63,7 @@ $ go22 add -c mycomp -n localhost -i 127.0.0.1 -a key -u admin -d $HOME/.ssh/id_
 		privKey, pubKey, _ := ssh.GenSSHKeyPair()
 
 
-		connection := backend.Connection{
+		newConnection := backend.Connection{
 			ConnName: connName,
 			HostName: hostName,
 			IPAddress: ipAddress,
@@ -71,8 +73,9 @@ $ go22 add -c mycomp -n localhost -i 127.0.0.1 -a key -u admin -d $HOME/.ssh/id_
 			PrivKey: privKey,
 			PubKey: pubKey,
 		}
-		// fmt.Println(connection, db)
-		err = db.AddConn(connection)
+		
+		//Save new connection
+		err = db.AddConn(newConnection)
 		if err != nil {
 			log.Error(err.Error())
 			return
