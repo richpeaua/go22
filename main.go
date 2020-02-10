@@ -18,5 +18,5 @@ package main
 import "github.com/richpeaua/go22/cmd"
 
 func main() {
-  cmd.Execute()
+        cmd.Execute()
 }

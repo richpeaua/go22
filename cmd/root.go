@@ -37,7 +37,7 @@ var rootCmd = &cobra.Command{
   
 go22 handles things such as saving target hosts, ssh keys, user names and passwords, and other
 information needed to establish an SSH connection to a host. These saved connections can then be called using go22
-and voila you in!`,
+and voila you're in!`,
   // Uncomment the following line if your bare application
   // has an action associated with it:
   Run: func(cmd *cobra.Command, args []string) {fmt.Println("Hello, CLI") },
@@ -59,7 +59,7 @@ func init() {
   // Cobra supports persistent flags, which, if defined here,
   // will be global for your application.
 
-  rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go22.yaml)")
+  // rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.go22.yaml)")
 
 
   // Cobra also supports local flags, which will only run

@@ -16,6 +16,11 @@ limitations under the License.
 package cmd
 
 import (
+	"fmt"
+	"os"
+	"os/exec"
+	"bufio"
+	"strings"
 
 	"github.com/richpeaua/go22/pkg/backend"
 	"github.com/richpeaua/go22/pkg/log"
@@ -30,6 +35,7 @@ var addCmd = &cobra.Command{
 	Use:   "add",
 	Short: "Add an SSH connection",
 	Long: `Save a connection for a target host by defining the following items:
+ • Connection Name
  • Target hostname AND/OR 
  • Target IP address
  • Auth type (key or password)
@@ -44,43 +50,33 @@ Examples:
 $ go22 add 
 
 [non-interactive]
-$ go22 add -c mycomp -n localhost -i 127.0.0.1 -a key -u admin -d $HOME/.ssh/id_rsa.pub`,
+$ go22 add -c myconn01 -n localhost -i 127.0.0.1 -a key -u test`,
 	Run: func(cmd *cobra.Command, args []string) {
-		//New database connection
+		// New database connection
 		db, err := backend.NewDB(DataFile)
 		if err != nil {
 			log.Error(err.Error())
 			return
 		}
-		
-		//Grab connection attribute values from CLI flag input
-		connName, _  := cmd.Flags().GetString("conn-name") 
-		hostName, _  := cmd.Flags().GetString("host-name")
-		ipAddress, _ := cmd.Flags().GetString("ip-address")
-		authType, _  := cmd.Flags().GetString("auth-type")
-		userName, _  := cmd.Flags().GetString("username")
-		password, _  := cmd.Flags().GetString("password")
-		privKey, pubKey, _ := ssh.GenSSHKeyPair()
 
+		// Create new SSH connection
+		newConn := backend.Connection{}
 
-		newConnection := backend.Connection{
-			ConnName: connName,
-			HostName: hostName,
-			IPAddress: ipAddress,
-			AuthType: authType,
-			Username: userName,
-			Password: password,
-			PrivKey: privKey,
-			PubKey: pubKey,
+		switch flagSet := cmd.Flags().NFlag(); flagSet {
+		case 0:
+			promptAdd(&newConn)
+		default:
+		       	cliAdd(&newConn, cmd)
 		}
-		
-		//Save new connection
-		err = db.AddConn(newConnection)
+
+		// Save new SSH connection
+		err = db.AddConn(newConn)
 		if err != nil {
 			log.Error(err.Error())
 			return
 		}
-		log.Info("Connection \"%s\" successfully created", connName)
+		log.Info("Connection \"%s\" successfully created", newConn.ConnName)
+
 	},
 }
 
@@ -94,4 +90,56 @@ func init() {
 	addCmd.Flags().StringP("password", "p", "", "connection password \t*required if --auth-type=password")
 	addCmd.Flags().StringP("key", "k", "", "connection key path \t^optional")
 }
+
+// Add connection from flags
+func cliAdd(c *backend.Connection, cmd *cobra.Command) {
+	//Grab connection attribute values from CLI flag input
+	c.ConnName, _  = cmd.Flags().GetString("conn-name") 
+	c.HostName, _  = cmd.Flags().GetString("host-name")
+	c.IPAddress, _ = cmd.Flags().GetString("ip-address")
+	c.AuthType, _  = cmd.Flags().GetString("auth-type")
+	c.Username, _  = cmd.Flags().GetString("username")
+	c.Password, _  = cmd.Flags().GetString("password")
+	c.PrivKey, c.PubKey, _ = ssh.GenSSHKeyPair()
+
+}
+
+// Add connection from interactive prompt
+func promptAdd(c *backend.Connection) {
+	reader := bufio.NewReader(os.Stdin)
+
+	cmd := exec.Command("clear")
+	cmd.Stdout = os.Stdout
+	cmd.Run()
+
+	fmt.Println("New Connection Prompt \n\nEnter the following:")
+
+	fmt.Print("\tConnection Name: ")	
+	connName, _ :=  reader.ReadString('\n')
+	c.ConnName = strings.TrimSpace(connName)
+
+	fmt.Print("\tHost Name: ")
+	hostName, _  := reader.ReadString('\n')
+	c.HostName = strings.TrimSpace(hostName)
+
+	fmt.Print("\tIP Address: ")
+	ipAddress, _ := reader.ReadString('\n')
+	c.IPAddress = strings.TrimSpace(ipAddress)
+
+	fmt.Print("\tAuth Method [key | password]: ")
+	authType, _  := reader.ReadString('\n')
+	c.AuthType = strings.TrimSpace(authType)
+
+	fmt.Print("\tUsername: ")
+	userName, _  := reader.ReadString('\n')
+	c.Username = strings.TrimSpace(userName)
+
+	fmt.Print("\tPassword: ")
+	password, _  := reader.ReadString('\n')
+	c.Password = strings.TrimSpace(password)
+
+	c.PrivKey, c.PubKey, _ = ssh.GenSSHKeyPair()
+	fmt.Println()
+}
+
 

@@ -26,8 +26,8 @@ import (
 var initCmd = &cobra.Command{
 	Use:   "init",
 	Short: "initialize go22 program ",
-	Long: `creates the ".go22/" and ".go22/data" directories in your home directory
-and creates the "connections.db" sqlite3 database with initalized "connections" table`,
+	Long: `creates the ".go22" application directory in user home directory
+to save app data`,
 	Run: func(cmd *cobra.Command, args []string) {
 		createAppDir(AppDir, AppDataDir)
 		fmt.Println("initialized; ready to save connections")
